@@ -22,8 +22,9 @@ app.post('/login',
 
 By default, if authentication fails, Passport will respond with a
 `401 Unauthorized` status, and any additional route handlers will not be
-invoked.  If authentication succeeds, the next handler will be invoked and the
-`req.user` property will be set to the authenticated user.
+invoked.  Use the [Fail with error](#failWithError) option to pass failures 
+through the next error handling middleware. If authentication succeeds, the 
+next handler will be invoked and the `req.user` property will be set to the authenticated user.
 
 Note: Strategies must be configured prior to using them in a route.  Continue
 reading the chapter on [configuration](/guide/configure/) for details.
@@ -94,6 +95,43 @@ app.get('/api/users/me',
   function(req, res) {
     res.json({ id: req.user.id, username: req.user.username });
   });
+```
+
+## Fail with Error
+
+Use this option to pass failures through your own error handling middleware.
+
+```javascript
+app.post('/login',
+  passport.authenticate('local', { failWithError: true },
+  function(req, res) {
+    // If this function gets called, authentication was successful.
+    // `req.user` contains the authenticated user.
+    res.redirect('/users/' + req.user.username);
+  });
+'''
+
+Errors can then be caught by route middleware.
+
+```javascript
+app.use(err, req, res, next) {
+  // This catches errors 
+  res.status(401).json({success: false, err: err, msg: "Error caught"});
+});
+```
+
+Which will produce the following JSON.
+
+```javascript
+{
+    "success": false,
+    "err": {
+        "name": "AuthenticationError",
+        "message": "Unauthorized",
+        "status": 401
+    },
+    "msg": "Error Caught"
+}
 ```
 
 ## Custom Callback
